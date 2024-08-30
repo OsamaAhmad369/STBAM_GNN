@@ -91,7 +91,7 @@ class preprocessing:
        
         for index, (data_type, (_data, labels)) in enumerate(datasets.items()):
             data_list = []
-            for i in range(len(data)):
+            for i in range(len(_data)):
                 label = labels[i]
                 _images = _data[i] / 255.
                 adj={}
