@@ -131,7 +131,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process some parameters.")
     parser.add_argument("--nodes", type=int, default=64, help="Number of nodes for superpixels")
     parser.add_argument("--compactness", type=float, default=10.0, help="Compactness for superpixel segmentation")
-    parser.add_argument("--path", type=str, default='./data/', help="Path to the dataset directory")
+    parser.add_argument("--path", type=str, default='../data/', help="Path to the dataset directory")
     
     args = parser.parse_args()
 
