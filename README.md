@@ -9,6 +9,7 @@ C2D2 dataset [Link](https://pern-my.sharepoint.com/:u:/g/personal/22060007_lums_
 python preprocessing/preprocessing.py --nodes 64 --compactness 20.0
 ```
 
-## 2. Training and Evaluation 
+## 2. Training 
+## 3. Evaluation 
 
 
