@@ -38,43 +38,46 @@ class GNN(nn.Module):
         x_graph=x_graph.reshape(shape=(x_graph.shape[0],x_graph.shape[1]*x_graph.shape[2]))
         y=self.out1(x_graph)
         return y, None,None
-
-num_classes = 4
-torch.autograd.set_detect_anomaly(True)
-seed = 42
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-torch.cuda.manual_seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-
-classes=4
-
 def initialize_weights(m):
     if isinstance(m, nn.Linear):
         torch.nn.init.xavier_uniform_(m.weight)
         if m.bias is not None:
             torch.nn.init.zeros_(m.bias)
+def main():
 
-parser = get_public_config()
-args = parser.parse_args()
+    torch.autograd.set_detect_anomaly(True)
+    seed = 42
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.cuda.manual_seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    
+    classes=4
+    
+    
+    
+    parser = get_public_config()
+    args = parser.parse_args()
+    
+    model = GNN(num_classes=classes,nodes=args.nodes).to(args.device)
+    model.apply(initialize_weights)
+    loss_fn=torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(),lr=args.lrate)
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('model.params (M): ', num_params/1000000)
+    
+    dataloader_creator = DataLoaderCreator(batch_size=args.bs)
+    train_loader, val_loader, test_loader = dataloader_creator.get_loaders()
+    engine=BaseEngine(model,optimizer,loss_fn,args.penalty,args.device,train_loader,val_loader,test_loader,args.epochs)
+    
+    if args.mode=="train":
+            engine.train()
+    else:
+            engine.evaluateTest(args.weightspath)
 
-model = GNN(num_classes=classes,nodes=args.nodes).to(args.device)
-model.apply(initialize_weights)
-loss_fn=torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(),lr=args.lrate)
-num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-print('model.params (M): ', num_params/1000000)
-
-dataloader_creator = DataLoaderCreator(batch_size=args.bs)
-train_loader, val_loader, test_loader = dataloader_creator.get_loaders()
-engine=BaseEngine(model,optimizer,loss_fn,args.penalty,args.device,train_loader,val_loader,test_loader,args.epochs)
-
-if args.mode=="train":
-        engine.train()
-else:
-        engine.evaluateTest(args.weightspath)
-
-
+if __name__ == "__main__":
+    main()    
+    
 
 
