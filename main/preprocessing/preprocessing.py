@@ -16,6 +16,7 @@ import torchvision.models as models
 from torch.nn import Sequential
 from torch_geometric.data import Data, Batch
 from torch_geometric.utils import to_dense_adj,to_dense_batch,dense_to_sparse
+from tqdm import tqdm
 
 class preprocessing:
     def __init__(self,nodes=64,compactness=10,model_path=None):
@@ -77,21 +78,27 @@ class preprocessing:
         return train_data, train_labels, val_data, val_labels, test_data, test_labels
     
     def save_data(self, data_list, data_type):
-        with open(f"{self.model_path}/{data_type}_c2d2_BA.pkl", "wb") as f:
+        path = f"{self.model_path}/{data_type}_c2d2_BA.pkl"
+        print(f"\nSaving {data_type} data to {path}")
+        with open(path, "wb") as f:
             pickle.dump(data_list, f)
     def run(self):
         file_path = os.path.join(self.model_path, "dataset-001.h5")
         file = h5py.File(file_path)
         labels = np.array(file['data_y'])
         data = np.array(file['data_x'])
-
+        # select just 10 samples for testing
+        data = data[:10]
+        labels = labels[:10]
+        print("Data shape: ", data.shape, "Labels shape: ", labels.shape)
         train_data, train_labels, val_data, val_labels, test_data, test_labels = self.split_data(data, labels)
 
         datasets = {'train': (train_data, train_labels), 'val': (val_data, val_labels), 'test': (test_data, test_labels)}
        
-        for index, (data_type, (_data, labels)) in enumerate(datasets.items()):
+        for index, (data_type, (_data, labels)) in tqdm(enumerate(datasets.items())):
+            print(f"\nProcessing {data_type} data")
             data_list = []
-            for i in range(len(_data)):
+            for i in tqdm(range(len(_data))):
                 label = labels[i]
                 _images = _data[i] / 255.
                 adj={}
@@ -121,7 +128,7 @@ class preprocessing:
                 _edge_attr=[adj[0][0].shape[0], adj[1][0].shape[0],adj[2][0].shape[0]] #edge attribute contains the information regarding the dynamic number of nodes 
                 _edge_index,_=dense_to_sparse(block_adj)
                 
-                xnew=torch.cat([x[0],x[1],x[2]],dim=0)
+                xnew=torch.cat([x[0], x[1], x[2]],dim=0)
                 data = Data(x=xnew,edge_index=_edge_index,edge_attr=_edge_attr,y=[label])
                 data_list.append([data])
         
