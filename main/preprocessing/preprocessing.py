@@ -129,7 +129,7 @@ class preprocessing:
                 _edge_index,_=dense_to_sparse(block_adj)
                 
                 xnew=torch.cat([x[0], x[1], x[2]],dim=0)
-                data = Data(x=xnew,edge_index=_edge_index,edge_attr=_edge_attr,y=[label])
+                data = Data(x=xnew,edge_index=_edge_index,edge_attr=_edge_attr,y=torch.tensor([label], dtype=torch.float).squeeze(1))
                 data_list.append([data])
         
             self.save_data(data_list, data_type)

@@ -4,7 +4,9 @@ from torch_geometric.utils import to_dense_adj,to_dense_batch
 from sklearn.metrics import confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+import logging
+import numpy as np
+import os
 
 def plot_confusion_matrix(confusion_matrix):
             plt.figure(figsize=(8, 8))
@@ -25,7 +27,8 @@ class BaseEngine():
         self.val_loader=val_loader
         self.test_loader=test_loader
         self.num_epochs = num_epochs
-        self.best_model_path = "best_model.pt"
+        os.makedirs("experiments/new", exist_ok=True)
+        self.best_model_path = "experiments/new/best_model.pt"
 
     def train_fn(self,loader):
         self.model.train()
@@ -34,8 +37,13 @@ class BaseEngine():
 
         for i, data in enumerate(bar):
                 data = data[0]
+                # print("\n\n")
+                # print(f"data.x.shape: {data.x.shape}")
+                # print(f"data.y.shape: {data.y.shape}, type(data.y): {type(data.y)}")
+                # print("\n\ndebugging:\n", data.y[0])
                 target=data.y.long().to(self.device)
-                x, edge_index,batch = data.x,data.edge_index ,data.batch
+                # target = target.view(-1)
+                x, edge_index, batch = data.x,data.edge_index ,data.batch
                 x, _ = to_dense_batch(x,batch)
                 x=x.to(self.device)
                 adj = to_dense_adj(edge_index,batch).to(self.device)
@@ -51,7 +59,7 @@ class BaseEngine():
         print('total_loss: ', total_loss / len(loader.dataset))
         return total_loss / len(loader.dataset)
 
-    def evaluate(self,loader):
+    def evaluate(self, loader):
         self.model.eval()
         all_preds = []
         all_labels = []
@@ -64,7 +72,8 @@ class BaseEngine():
                 x,_ = to_dense_batch(x, batch)
                 x=x.to(self.device)
                 adj = to_dense_adj(edge_index, batch).to(self.device)
-                logits = self.model(x, adj,indices=None)
+                logits, _, adja = self.model(x, adj,indices=None)
+                print(f"logits.shape: {logits.shape}")
                 pred = torch.max(logits,1)[1]
                 all_preds.extend(pred.tolist())
                 all_labels.extend(label.tolist())
@@ -74,7 +83,7 @@ class BaseEngine():
     
     def train (self):
         train_loss = []
-        best_val_accuracy = 0.0
+        best_val_accuracy = -np.inf
         for epoch in range(self.num_epochs):
             loss = self.train_fn(self.train_loader)
             # Perform evaluation only on alternate epochs
@@ -83,11 +92,12 @@ class BaseEngine():
             if val_accuracy > best_val_accuracy:
                 best_val_accuracy = val_accuracy
                 torch.save(self.model.state_dict(), self.best_model_path)
+                print(f"Best model saved at {self.best_model_path}")
             print(f'Epoch: {epoch + 1}, Loss: {loss:.16f}, Train Accuracy: {train_accuracy*100:.6f}, Val Accuracy: {val_accuracy*100:.6f}')
             train_loss.append(loss)
         self.evaluateTest(self.best_model_path)
 
-    def evaluateTest (self,model_path):
+    def evaluateTest(self, model_path):
         self.model.load_state_dict(torch.load(model_path))
         # Evaluate the best model on the test set
         test_accuracy, cm = self.evaluate(self.test_loader)

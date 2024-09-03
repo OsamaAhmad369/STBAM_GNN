@@ -1,3 +1,5 @@
+import sys
+sys.path.append('')
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -109,9 +111,9 @@ def main():
     engine=BaseEngine(model,optimizer,loss_fn,args.penalty,args.device,train_loader,val_loader,test_loader,args.epochs)
 
     if args.mode=="train":
-            engine.train()
+        engine.train()
     else:
-            engine.evaluateTest(args.weightspath)
+        engine.evaluateTest(args.weightspath)
 
 if __name__ == "__main__":
     main()

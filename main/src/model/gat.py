@@ -8,6 +8,7 @@ from src.utils.dataloader import DataLoaderCreator
 from src.utils.base import BaseEngine
 from src.utils.args import get_public_config
 import argparse
+import numpy as np
 
 
 
@@ -25,16 +26,16 @@ class GNN(nn.Module):
     def forward(self, x, adj,indices):
         x_graph=torch.zeros((adj.shape[0],3*self.nodes,32)).to(x.device)
         for i in range(adj.shape[0]):
-                weighted_adj_matrix = adj[i,:,:]
-                coo_matrix = sp.coo_matrix(weighted_adj_matrix.detach().cpu().numpy())  # Convert to Scipy COO matrix
-                edge_index, edge_attr = from_scipy_sparse_matrix(coo_matrix)
-                edge_index=edge_index.to(x.device)
-                edge_attr=edge_attr.to(x.device)
-                x_n=x[i,:,:]
-                x_n = F.relu(self.conv1(x_n,edge_index,edge_attr=edge_attr))
-                x_n = F.relu(self.conv2(x_n,edge_index,edge_attr=edge_attr))
-                x_n = F.relu(self.conv3(x_n,edge_index,edge_attr=edge_attr))
-                x_graph[i,:,:]=x_n
+            weighted_adj_matrix = adj[i,:,:]
+            coo_matrix = sp.coo_matrix(weighted_adj_matrix.detach().cpu().numpy())  # Convert to Scipy COO matrix
+            edge_index, edge_attr = from_scipy_sparse_matrix(coo_matrix)
+            edge_index=edge_index.to(x.device)
+            edge_attr=edge_attr.to(x.device)
+            x_n=x[i,:,:]
+            x_n = F.relu(self.conv1(x_n,edge_index,edge_attr=edge_attr))
+            x_n = F.relu(self.conv2(x_n,edge_index,edge_attr=edge_attr))
+            x_n = F.relu(self.conv3(x_n,edge_index,edge_attr=edge_attr))
+            x_graph[i,:,:]=x_n
         x_graph=x_graph.reshape(shape=(x_graph.shape[0],x_graph.shape[1]*x_graph.shape[2]))
         y=self.out1(x_graph)
         return y, None,None
@@ -52,7 +53,7 @@ def main():
     torch.cuda.manual_seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    
+    np.random.seed(seed)
     classes=4
     
     
@@ -60,7 +61,7 @@ def main():
     parser = get_public_config()
     args = parser.parse_args()
     
-    model = GNN(num_classes=classes,nodes=args.nodes).to(args.device)
+    model = GNN(num_classes=classes, nodes=args.nodes).to(args.device)
     model.apply(initialize_weights)
     loss_fn=torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(),lr=args.lrate)
@@ -72,9 +73,9 @@ def main():
     engine=BaseEngine(model,optimizer,loss_fn,args.penalty,args.device,train_loader,val_loader,test_loader,args.epochs)
     
     if args.mode=="train":
-            engine.train()
+        engine.train()
     else:
-            engine.evaluateTest(args.weightspath)
+        engine.evaluateTest(args.weightspath)
 
 if __name__ == "__main__":
     main()    

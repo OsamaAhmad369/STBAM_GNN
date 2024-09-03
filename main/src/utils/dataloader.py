@@ -5,19 +5,19 @@ from torch_geometric.data import DataLoader
 from typing import Any
 
 
-train_path = "../data/train_data_c2d2_BA.pkl"
-val_path = "../data/val_data_c2d2_BA.pkl"
-test_path = "../data/test_data_c2d2_BA.pkl"
+train_path = "data/train_c2d2_BA.pkl"
+val_path = "data/val_c2d2_BA.pkl"
+test_path = "data/test_c2d2_BA.pkl"
 
 class CPU_Unpickler(pickle.Unpickler):
     def find_class(self, __module_name: str, __global_name: str) -> Any:
         if __module_name == 'torch.storage' and __global_name == '_load_from_bytes':
-            return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
+            return lambda b: torch.load(io.BytesIO(b), map_location='cpu', weights_only=True)
         else:
             return super().find_class(__module_name, __global_name)
         
 class DataLoaderCreator:
-    def __init__(self, train_path, val_path, test_path, batch_size=4):
+    def __init__(self, train_path=train_path, val_path=val_path, test_path=test_path, batch_size=4):
         self.train_path = train_path
         self.val_path = val_path
         self.test_path = test_path
