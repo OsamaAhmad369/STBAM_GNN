@@ -11,4 +11,5 @@ def get_public_config():
     parser.add_argument("--lrate", type=float, default=1e-4)
     parser.add_argument("--mode",type=str,default="train", help="For evaluation set mode test otherwise train")
     parser.add_argument("--weightspath", type=str, default='')
+    parser.add_argument("--show_cm", type=bool, default=False)
     return parser

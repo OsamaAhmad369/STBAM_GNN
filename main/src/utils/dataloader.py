@@ -1,7 +1,7 @@
 import pickle
 import torch
 import io
-from torch_geometric.data import DataLoader
+from torch_geometric.loader import DataLoader
 from typing import Any
 
 

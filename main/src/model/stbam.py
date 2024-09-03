@@ -108,7 +108,7 @@ def main():
 
     dataloader_creator = DataLoaderCreator(batch_size=args.bs)
     train_loader, val_loader, test_loader = dataloader_creator.get_loaders()
-    engine=BaseEngine(model,optimizer,loss_fn,args.penalty,args.device,train_loader,val_loader,test_loader,args.epochs)
+    engine=BaseEngine(model,optimizer,loss_fn,args.penalty,args.device,train_loader,val_loader,test_loader,args.epochs, args.show_cm)
 
     if args.mode=="train":
         engine.train()
