@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import skimage as io
 from skimage.segmentation import slic, mark_boundaries
 from skimage.color import lab2rgb
-from skimage.future import graph
+from skimage import graph
 from sklearn.model_selection import train_test_split
 import pickle
 import h5py
