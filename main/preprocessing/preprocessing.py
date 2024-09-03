@@ -31,19 +31,24 @@ class preprocessing:
         self.new_model.eval()
         
     # Preprocess the dataset
-    def preprocess_image(self,image):
-        superpixels_mask = slic(image, n_segments=self.nodes, compactness=self.compactness)  
-        output_features=self.VGG16(torch.tensor(image,dtype=torch.float32).permute(2,0,1))
+    def preprocess_image(self, image):
+        superpixels_mask = slic(image, n_segments=self.nodes, compactness=self.compactness)
+        # print(f"image shape: {image.shape}")  ## (224, 224, 3)
+        output_features = self.VGG16(torch.tensor(image, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0))
+        output_features = output_features.squeeze(0) ## C, H, W
         node_features = self.compute_superpixel_features(image, superpixels_mask, output_features)
         adjacency_matrix = self.compute_adjacency_matrix(image, superpixels_mask)
         return torch.tensor(node_features, dtype=torch.float), torch.tensor(adjacency_matrix, dtype=torch.float)
 
-    def compute_superpixel_features(self,image, segments,output_features):
+
+    def compute_superpixel_features(self,image, segments, output_features):
         num_superpixels = int(np.max(segments))
+        ## featrues -> C, H, W      image -> H, W, C
         superpixel_features = np.zeros((num_superpixels, 67))
-        output_features=output_features.permute(2,1,0)
-        _features=np.array(output_features.tolist())
-        image=np.concatenate((image,_features),axis=2)
+        output_features=output_features.permute(2,1,0).cpu().detach().numpy()
+        # _features=np.array(output_features.tolist())
+        # print(f"Output features shape: {output_features.shape}, Image shape: {image.shape}")
+        image=np.concatenate((image,output_features),axis=2)
         for i in range(num_superpixels-1):
             i+=1
             mask = segments == i     
@@ -78,7 +83,8 @@ class preprocessing:
         return train_data, train_labels, val_data, val_labels, test_data, test_labels
     
     def save_data(self, data_list, data_type):
-        path = f"{self.model_path}/{data_type}_c2d2_BA.pkl"
+        # path = f"{self.model_path}/{data_type}_c2d2_BA.pkl"
+        path = f"{self.model_path}/{data_type}_10s.pkl"
         print(f"\nSaving {data_type} data to {path}")
         with open(path, "wb") as f:
             pickle.dump(data_list, f)
@@ -127,8 +133,10 @@ class preprocessing:
                     
                 _edge_attr=[adj[0][0].shape[0], adj[1][0].shape[0],adj[2][0].shape[0]] #edge attribute contains the information regarding the dynamic number of nodes 
                 _edge_index,_=dense_to_sparse(block_adj)
-                
-                xnew=torch.cat([x[0], x[1], x[2]],dim=0)
+                xnew = np.concatenate([x[0], x[1], x[2]], axis=0)
+                xnew = torch.tensor(xnew, dtype=torch.float)  # Convert numpy array to tensor
+
+                # xnew=torch.cat([x[0], x[1], x[2]],dim=0)
                 data = Data(x=xnew,edge_index=_edge_index,edge_attr=_edge_attr,y=torch.tensor([label], dtype=torch.float).squeeze(1))
                 data_list.append([data])
         

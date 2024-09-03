@@ -17,7 +17,7 @@ def plot_confusion_matrix(confusion_matrix):
     plt.show()
 
 class BaseEngine():
-    def __init__(self, model, optimizer, loss_fn, penalty, device, train_loader, val_loader, test_loader, num_epochs, show_cm):
+    def __init__(self, model, optimizer, loss_fn, penalty, device, train_loader, val_loader, test_loader, num_epochs, show_cm=False):
         self.model = model
         self.optimizer = optimizer
         self.loss_fn = loss_fn
@@ -35,8 +35,12 @@ class BaseEngine():
         
         # Set up logging
         log_file_path = f"experiments/{experiment_name}/log.txt"
-        logging.basicConfig(filename=log_file_path, level=logging.INFO, 
-                            format='%(asctime)s - %(levelname)s - %(message)s')
+        logging.basicConfig(level=logging.INFO, 
+                            format='%(asctime)s - %(levelname)s - %(message)s',
+                            handlers=[
+                                logging.FileHandler(log_file_path),
+                                logging.StreamHandler()
+                            ])
         self.logger = logging.getLogger()
 
         self.logger.info("Initialized BaseEngine")
